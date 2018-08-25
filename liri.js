@@ -22,6 +22,7 @@ var command = process.argv[2];
 //movie or song
 var data = "";
 var song = process.argv.slice(3).join(" ");
+console.log(song);
 //changing the input to a string
 
 //attaches multiple word arguments
@@ -30,8 +31,8 @@ for (var i=3; i<incoming.length; i++){
     data = data + "+" + incoming[i];
   } else{
     data = data + incoming[i];
-    console.log(data);
-    debugger;
+    // console.log(data);
+    // debugger;
   }
 }
 
@@ -42,23 +43,23 @@ switch(command){
   break;
 
   case "spotify-this-song":
-    if(data){
-      spotifySong(data);
+    if(song){
+      spotifySong(song);
     } else{
       spotifySong("The Sign");
     }
   break;
 
   case "movie-this":
-    if(data){
-      omdbData(data)
+    if(song){
+      omdbData(song)
     } else{
       omdbData("Mr. Nobody")
     }
   break;
 
   case "do-what-it-says":
-    doIt();
+    doIt(command);
   break;
 
   default:
@@ -66,17 +67,16 @@ switch(command){
   break;
 }
 
-function showTweets(){
- 
+function showTweets(){   
   var params = {screen_name: 'DianthusGarnet'};
-
   // debugger;
   //Display last 20 Tweets
   client.get('statuses/user_timeline', params, function(error, tweets, response){
+    // console.log(response);
     // console.log("error: " + error.message);
     // console.log("tweets: " + tweets.length);
     // console.log("response: " + response.
-    // debugger;
+
     if(!error){
       for(var i = 0; i<tweets.length; i++){
         
@@ -105,6 +105,7 @@ function showTweets(){
 
 
         // adds text to log.txt file
+
         fs.appendFile('entries.txt', " " + tweets[i].text + " Created At: " + date.substring(0, 19));
         fs.appendFile('entries.txt', "-----------------------");
        }
@@ -124,10 +125,13 @@ function spotifySong(song){
   // console.log(data); 
   // });
 
-  spotify.search({ type: 'track', query: song }, function(error, data){
-    console.log(data);
-    var edit = data;
+  //get to exact match, can be an option in the command line
 
+  spotify.search({ type: 'track', query: song }, function(error, data){
+    
+    fs.writeFileSync('songs.txt','Spotify Tracks Results: ' + song + "\n\n" );
+    var edit = data;
+    //special character in javascript
 
     if (error) {
       return console.log('Error occurred: ' + error);
@@ -136,6 +140,7 @@ function spotifySong(song){
       for(var i = 0; i < edit.tracks.items.length; i++){
         var songData = edit.tracks.items[i];
         //artist
+
         console.log("Artist: " + songData.artists[0].name);
         //song name
         console.log("Song: " + songData.name);
@@ -145,26 +150,40 @@ function spotifySong(song){
         console.log("Album: " + songData.album.name);
         console.log("-----------------------");
         
-        //adds text to .txt
-        fs.appendFile('entries.txt', songData.artists[0].name);
-        fs.appendFile('entries.txt', songData.name);
-        fs.appendFile('entries.txt', songData.preview_url);
-        fs.appendFile('entries.txt', songData.album.name);
-        fs.appendFile('entries.txt', "-----------------------");
-      }
-   
+        var output = [];
+        output.push(songData.artists[0].name);
+        output.push(songData.name);
+        output.push(songData.preview_url);
+        output.push(songData.album.name);
+        output.push( "-----------------------");
+
+        // adds text to .txt
+        fs.appendFileSync('songs.txt', output.join("\n")+ "\n");
+      
+       
+     }  
+
+    //append file one string with line breaks
+
   });
 }
 
-
+//song is a newly declared variable here
+//its okay to rename song
 function omdbData(song){
   var omdbURL = 'http://www.omdbapi.com/?t=' + song + '&plot=short&tomatoes=true&apikey=trilogy';
 
+  //ADD A WRITE FILE SYNC
+  //use the song method
+  //add a new file
 
   request(omdbURL, function (error, response, body){
     // if(!error && response.statusCode == 200){
+      fs.writeFileSync('movies.txt','IMDB Result: ' + song + "\n\n" );
+
       console.log(body);
       var body = JSON.parse(body);
+      //dont need var here, variable is implicit
       // debugger;
     
       
@@ -179,38 +198,48 @@ function omdbData(song){
       console.log("Rotten Tomatoes URL: " + body.tomatoURL);
 
       //adds text to log.txt
-      fs.appendFile('entries.txt', "Title: " + body.Title);
-      fs.appendFile('entries.txt', "Release Year: " + body.Year);
-      fs.appendFile('entries.txt', "IMdB Rating: " + body.imdbRating);
-      fs.appendFile('entries.txt', "Country: " + body.Country);
-      fs.appendFile('entries.txt', "Language: " + body.Language);
-      fs.appendFile('entries.txt', "Plot: " + body.Plot);
-      fs.appendFile('entries.txt', "Actors: " + body.Actors);
-      fs.appendFile('entries.txt', "Rotten Tomatoes Rating: " + body.tomatoRating);
-      fs.appendFile('entries.txt', "Rotten Tomatoes URL: " + body.tomatoURL);
+      //edit this with the above method
 
+      var movieOutput = [];
+      movieOutput.push(body.Title);
+      movieOutput.push(body.Year);
+      movieOutput.push(body.imdbRating);
+      movieOutput.push(body.Country);
+      movieOutput.push(body.Language);
+      movieOutput.push(body.Plot);
+      movieOutput.push(body.Actors);
+      movieOutput.push(body.tomatoRating);
+      movieOutput.push(body.tomatoURL);
+      movieOutput.push( "-----------------------");
+
+        // adds text to .txt
+      fs.appendFileSync('movies.txt', movieOutput.join("\n")+ "\n");
+      
     // } else{
     //   console.log('Error occurred.')
     // }
-    if(movie === "Mr. Nobody"){
+
+    //this is a local copy so it could be renamed.
+    if(song === "Mr. Nobody"){
       console.log("-----------------------");
       console.log("If you haven't watched 'Mr. Nobody,' then you should: http://www.imdb.com/title/tt0485947/");
       console.log("It's on Netflix!");
 
       // adds text to a .txt
-      fsJs.appendFile('.txt', "-----------------------");
-      fsJs.appendFile('.txt', "If you haven't watched 'Mr. Nobody,' then you should: http://www.imdb.com/title/tt0485947/");
-      fsJs.appendFile('.txt', "It's on Netflix!");
-        }
+      fs.appendFileSync('errors.txt', "-----------------------");
+      fs.appendFileSync('errors.txt', "If you haven't watched 'Mr. Nobody,' then you should: http://www.imdb.com/title/tt0485947/");
+      fs.appendFileSync('errors.txt', "It's on Netflix!");
+    }
+  
   });
-
 }
 
 function doIt(){
   fs.readFile('random.txt', "utf8", function(error, data){
     var randomTxt = data.split(',');
+    // console.log(randomTxt);
 
-    spotifySong(randomTxt[1]);
+     spotifySong(randomTxt[1]);
   });
 }
 
@@ -261,7 +290,6 @@ function doIt(){
 //these should call functions 
 
 //4.functions for each
-
 
 
 
